@@ -29,7 +29,15 @@ TS_StateTypeDef TS_State;
 play_buzzer buzzer(D6);
 bool enteredlibrary;
 bool enteredsecurity;
+DigitalOut alarmled(D7);
+Thread alarmledthread;
 
+void alarmLed () {
+    while (true) {
+        alarmled = !alarmled;
+        ThisThread::sleep_for(1000);
+    }
+}
 
 //Draw StartUp Screen
 void drawStartScreen() {
@@ -40,6 +48,15 @@ void drawStartScreen() {
     lcd.DrawBitmap(133, 192, (uint8_t *)Motor);
     lcd.DrawBitmap(266, 192, (uint8_t *)Music);
     lcd.DrawBitmap(399, 192, (uint8_t *)Security);
+}
+
+void drawGate(int i) {
+    if(i == 0) {
+        lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"Opening gate..", CENTER_MODE);
+    }
+    if(i == 1) {
+        lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"Closing gate..", CENTER_MODE);
+    }
 }
 
 //Draw Music Library
@@ -144,7 +161,7 @@ void drawKeypad() {
     
 }
 
-
+bool alarmactivated = false;
 //Draw Security screen
 void drawSecurity() {
     
@@ -306,10 +323,26 @@ void drawSecurity() {
                     lcd.SetTextColor(LCD_COLOR_GREEN);
                     lcd.ClearStringLine(1);
                     lcd.ClearStringLine(2);
+                    if (alarmactivated == false) {
+                        lcd.DisplayStringAt(0, LINE(1), (uint8_t *)"Success!", CENTER_MODE);
+                        lcd.DisplayStringAt(0, LINE(2), (uint8_t *)"Security activated", CENTER_MODE);
+                        lcd.DrawBitmap(416, 0, (uint8_t *)Cancel);
+                        alarmledthread.start(alarmLed);
+                        wait(2);
+                    }
+                        if (alarmactivated == true) {
+                        lcd.DisplayStringAt(0, LINE(1), (uint8_t *)"Success!", CENTER_MODE);
+                        lcd.DisplayStringAt(0, LINE(2), (uint8_t *)"Security disabled", CENTER_MODE);
+                        lcd.DrawBitmap(416, 0, (uint8_t *)Cancel);
+                        alarmledthread.terminate();
+                        alarmled = 0;
+                        wait(2);
+                    }
+                    alarmactivated = !alarmactivated;
                     lcd.DisplayStringAt(0, LINE(1), (uint8_t *)"Success!", CENTER_MODE);
                     lcd.DisplayStringAt(0, LINE(2), (uint8_t *)"Security activated", CENTER_MODE);
                     lcd.DrawBitmap(416, 0, (uint8_t *)Cancel);
-                    wait(3);
+                    wait(2);
                     enteredsecurity = false;
                 }
                 else {
@@ -319,7 +352,7 @@ void drawSecurity() {
                     lcd.DisplayStringAt(0, LINE(1), (uint8_t *)"Wrong PIN!", CENTER_MODE);
                     lcd.DrawBitmap(416, 0, (uint8_t *)Cancel);
                     pin = "";
-                    wait(3);
+                    wait(2);
                     lcd.SetTextColor(LCD_COLOR_BLUE);    
                 }
                 button11 = true;

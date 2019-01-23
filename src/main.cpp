@@ -11,6 +11,8 @@
 
 #include "mbed.h"
 #include "rtos.h"
+#include "EthernetInterface.h"
+#include "NTPClient.h"
 #include "TS_DISCO_F746NG.h"
 #include "LCD_DISCO_F746NG.h"
 #include "steppermotor.h"
@@ -29,25 +31,11 @@ int dooropen = 0;
 DigitalOut led(D8);
 soundsensor sound(A3);
 bool toDb = true;
-Thread threadtest;
-Thread threadtest2;
-Thread threadtest3;
-
-void test () {
-    while (true) {
-        led = !led;
-        ThisThread::sleep_for(1000);
-    }
-}
-void test2 () {
-        gate.open();
-}
-void test3 () {
-        gate.close();
-}
 
 int main()
 {
+    SCB_CleanDCache(); // Clean the entire data cache
+    SCB_DisableDCache(); // Disable the entire data cache
     printf("0");
     // Variables
     TS_StateTypeDef TS_State;
@@ -56,6 +44,7 @@ int main()
     bool touchedled = false;
     bool motortouched = false;
     bool cogwheeltouched = false;
+    bool alarmtouched = false;
     
     //Initial conf
     ts.Init(lcd.GetXSize(), lcd.GetYSize());
@@ -64,10 +53,7 @@ int main()
     lcd.SetTextColor(LCD_COLOR_BLUE);
     lcd.SetFont(&Font24);
     
-    printf("1");
     //Bootup Screen
-    //lcd.DrawBitmap(0, 50, (uint8_t *)SmartHome);
-    printf("2");
     wait(4);
     //Startup Screen
     drawStartScreen();
@@ -77,7 +63,6 @@ int main()
     //threadtest2.start(test2);
     while(1) {
         //printf("Loudness: %f\r\n", sound.listen(toDb));
-        wait(0.5);
         lcd.SetTextColor(LCD_COLOR_BLUE);
         lcd.SetFont(&Font24);
         ts.GetState(&TS_State);
@@ -89,6 +74,7 @@ int main()
             touchedled = false;
             motortouched = false;
             cogwheeltouched = false;
+            alarmtouched = false;
         }
         if (TS_State.touchDetected == 1){
             touched = true;
@@ -109,13 +95,13 @@ int main()
             while (motortouched == false) {
             lcd.Clear(LCD_COLOR_WHITE);
             if (dooropen == 0) {
-            threadtest2.set_priority(osPriorityHigh);
-            threadtest2.start(&test2);
+            drawGate(0);
+            gate.open();
             dooropen = 1;
             }
             else {
-            threadtest3.set_priority(osPriorityHigh);
-            threadtest3.start(&test3);
+            drawGate(1);
+            gate.close();
             dooropen = 0;
             } 
             motortouched = true;
@@ -134,7 +120,13 @@ int main()
         // Button 4 - Alarm
         // Defining touch area for this button:
         if ((TS_State.touchDetected) && (TS_State.touchX[0] > 410) && (TS_State.touchX[0] < 479) && (TS_State.touchY[0] > 190 )){
-            drawSecurity();
+            while (alarmtouched == false) {
+                ts.GetState(&TS_State);
+                while (TS_State.touchDetected == 0 && alarmtouched == false) {
+                    drawSecurity();
+                    alarmtouched = true; 
+                }
+            }
             drawStartScreen();
         }
         
