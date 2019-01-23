@@ -2,6 +2,7 @@
 #define DRAWIMAGE_H
 
 #include "mbed.h"
+#include "NTPClient/NTPClient.h"
 #include "LCD_DISCO_F746NG.h"
 #include "TS_DISCO_F746NG.h"
 #include <stdio.h>
@@ -22,7 +23,6 @@
 #include "Security.h"
 //#include "SmartHome.h"
 
-
 LCD_DISCO_F746NG lcd;
 TS_DISCO_F746NG ts;
 TS_StateTypeDef TS_State;
@@ -31,6 +31,18 @@ bool enteredlibrary;
 bool enteredsecurity;
 DigitalOut alarmled(D7);
 Thread alarmledthread;
+NTPClient ntp;
+
+void getTime() {
+    if (ntp.setTime("0.uk.pool.ntp.org") == 0)
+    {
+        time_t ctTime;
+        ctTime = time(NULL);
+        while (enteredlibrary == false && enteredsecurity == false) {
+        lcd.DisplayStringAt(0, LINE(0), (uint8_t *)ctime(&ctTime), LEFT_MODE);
+        }
+    }
+}
 
 void alarmLed () {
     while (true) {
