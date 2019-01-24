@@ -21,8 +21,8 @@
 #include "Music.h"
 #include "Pirate.h"
 #include "Security.h"
-//#include "SmartHome.h"
 
+// Devices and pin assignment:
 LCD_DISCO_F746NG lcd;
 TS_DISCO_F746NG ts;
 EthernetInterface eth;
@@ -33,6 +33,7 @@ bool enteredsecurity;
 DigitalOut alarmled(D7);
 Thread alarmledthread;
 
+// Function to get led to blink in a thread
 void alarmLed () {
     while (true) {
         alarmled = !alarmled;
@@ -51,6 +52,7 @@ void drawStartScreen() {
     lcd.DisplayStringAt(5, LINE(1), (uint8_t *)eth.get_ip_address(), LEFT_MODE);
 }
 
+// Draw info when using gate button
 void drawGate(int i) {
     if(i == 0) {
         lcd.DisplayStringAt(0, LINE(5), (uint8_t *)"Opening gate..", CENTER_MODE);
@@ -118,16 +120,13 @@ void drawSettings() {
      
     while (enteredsettings == true) {
         ts.GetState(&TS_State);
-        printf("1");
         if ((TS_State.touchDetected) && (TS_State.touchX[0] > 400) && (TS_State.touchX[0] < 479) && (TS_State.touchY[0] < 70 )){
             while (hometouched == false){
                 ts.GetState(&TS_State);
-                printf("2");
                 while (TS_State.touchDetected == 0 && hometouched == false) {
                     lcd.Clear(LCD_COLOR_WHITE);
                     enteredsettings = false;
                     hometouched = true;
-                    printf("3");
                 }
             }
         }
@@ -203,7 +202,6 @@ void drawSecurity() {
         lcd.DisplayStringAt(0, LINE(2), (uint8_t *)pin.c_str(), CENTER_MODE);
     
         //Key states to check if a certain key has been pressed and then resetting it
-        
         if ((TS_State.touchDetected == 0) && (touched2 == true)){
             touched2 = false;
             button0 = false;

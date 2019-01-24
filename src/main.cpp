@@ -23,8 +23,6 @@
 #include <string>
 
 // Devices and pin assignment:
-//LCD_DISCO_F746NG lcd;
-//TS_DISCO_F746NG ts;
 steppermotor gate(1200, 512);
 int dooropen = 0;
 DigitalOut led(D8);
@@ -37,7 +35,6 @@ int main()
 
     // Connecting to Internet and NTP servers:
     eth.connect();
-
 
     // Variables
     TS_StateTypeDef TS_State;
@@ -59,12 +56,11 @@ int main()
     drawStartScreen();
     
     while(1) {
-        //printf("Loudness: %f\r\n", sound.listen(toDb));
         lcd.SetTextColor(LCD_COLOR_BLUE);
         lcd.SetFont(&Font24);
         ts.GetState(&TS_State);
         
-        // Touch counter and reseting bools:
+        // Touch counter and resetting bools:
         if ((TS_State.touchDetected == 0) && (touched == true)){
             touches++;
             touched = false;
@@ -93,11 +89,13 @@ int main()
             lcd.Clear(LCD_COLOR_WHITE);
             if (dooropen == 0) {
             drawGate(0);
+            // Funtions call to StepperMotor library
             gate.open();
             dooropen = 1;
             }
             else {
             drawGate(1);
+            // Funtions call to StepperMotor library
             gate.close();
             dooropen = 0;
             } 
