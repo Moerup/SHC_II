@@ -2,9 +2,9 @@
 #define DRAWIMAGE_H
 
 #include "mbed.h"
-#include "NTPClient/NTPClient.h"
 #include "LCD_DISCO_F746NG.h"
 #include "TS_DISCO_F746NG.h"
+#include "EthernetInterface.h"
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -25,24 +25,13 @@
 
 LCD_DISCO_F746NG lcd;
 TS_DISCO_F746NG ts;
+EthernetInterface eth;
 TS_StateTypeDef TS_State;
 play_buzzer buzzer(D6);
 bool enteredlibrary;
 bool enteredsecurity;
 DigitalOut alarmled(D7);
 Thread alarmledthread;
-NTPClient ntp;
-
-void getTime() {
-    if (ntp.setTime("0.uk.pool.ntp.org") == 0)
-    {
-        time_t ctTime;
-        ctTime = time(NULL);
-        while (enteredlibrary == false && enteredsecurity == false) {
-        lcd.DisplayStringAt(0, LINE(0), (uint8_t *)ctime(&ctTime), LEFT_MODE);
-        }
-    }
-}
 
 void alarmLed () {
     while (true) {
@@ -54,12 +43,12 @@ void alarmLed () {
 //Draw StartUp Screen
 void drawStartScreen() {
     lcd.Clear(LCD_COLOR_WHITE);
-    //lcd.DrawBitmap(0, 50, (uint8_t *)SmartHome);
     lcd.DrawBitmap(416, 0, (uint8_t *)CogWheel);
     lcd.DrawBitmap(0, 192, (uint8_t *)LightBulb);
     lcd.DrawBitmap(133, 192, (uint8_t *)Motor);
     lcd.DrawBitmap(266, 192, (uint8_t *)Music);
     lcd.DrawBitmap(399, 192, (uint8_t *)Security);
+    lcd.DisplayStringAt(5, LINE(1), (uint8_t *)eth.get_ip_address(), LEFT_MODE);
 }
 
 void drawGate(int i) {
@@ -74,6 +63,7 @@ void drawGate(int i) {
 //Draw Music Library
 void drawMusicLibrary() {
 
+    bool canceltouched = false;
     enteredlibrary = true;
     lcd.Clear(LCD_COLOR_WHITE);
     lcd.DisplayStringAt(0, LINE(0), (uint8_t *)"Music Library", LEFT_MODE);
@@ -106,8 +96,14 @@ void drawMusicLibrary() {
         // Button 3 - Cancel
         // Defining touch area for this button:
         if ((TS_State.touchDetected) && (TS_State.touchX[0] > 400) && (TS_State.touchX[0] < 479) && (TS_State.touchY[0] < 70 )) {
-            lcd.Clear(LCD_COLOR_WHITE);
-            enteredlibrary = false;
+            while (canceltouched == false){
+                ts.GetState(&TS_State);
+                while (TS_State.touchDetected == 0 && canceltouched == false) {
+                    lcd.Clear(LCD_COLOR_WHITE);
+                    enteredlibrary = false;
+                    canceltouched = true;
+                }
+            }
         }
     }
 }
@@ -355,6 +351,7 @@ void drawSecurity() {
                     lcd.DisplayStringAt(0, LINE(2), (uint8_t *)"Security activated", CENTER_MODE);
                     lcd.DrawBitmap(416, 0, (uint8_t *)Cancel);
                     wait(2);
+                    lcd.SetTextColor(LCD_COLOR_BLUE);
                     enteredsecurity = false;
                 }
                 else {

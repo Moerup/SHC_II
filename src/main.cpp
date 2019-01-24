@@ -17,7 +17,6 @@
 #include "LCD_DISCO_F746NG.h"
 #include "steppermotor.h"
 #include "play_buzzer.h"
-#include "soundsensor.h"
 #include "GUI.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,13 +25,10 @@
 // Devices and pin assignment:
 //LCD_DISCO_F746NG lcd;
 //TS_DISCO_F746NG ts;
-EthernetInterface eth;
 steppermotor gate(1200, 512);
 int dooropen = 0;
 DigitalOut led(D8);
-soundsensor sound(A3);
 bool toDb = true;
-Thread timethread;
 
 int main()
 {
@@ -40,15 +36,8 @@ int main()
     SCB_DisableDCache(); // Disable the entire data cache
 
     // Connecting to Internet and NTP servers:
-    eth.init();
     eth.connect();
 
-    // Printing Ethernet info to serial
-    printf("IP Address is %s\r\n", eth.getIPAddress());
-    printf("NetMask is %s\r\n", eth.getNetworkMask());
-    printf("Gateway Address is %s\r\n", eth.getGateway());
-    printf("Ethernet Setup OK\r\n");
-    printf("Getting time, 10s timeout. \r\n");
 
     // Variables
     TS_StateTypeDef TS_State;
@@ -67,7 +56,6 @@ int main()
     lcd.SetFont(&Font24);
     
     //Startup Screen
-    timethread.start(getTime);
     drawStartScreen();
     
     while(1) {
